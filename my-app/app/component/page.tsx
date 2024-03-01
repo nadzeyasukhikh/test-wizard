@@ -13,9 +13,11 @@ interface House {
 export default function HouseList() {
   const [houseName, setHouseName] = useState('');
   const [houseInfo, setHouseInfo] = useState<House | null>(null);
+  const [error, setError] = useState(false);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setHouseName(event.target.value);
+    setError(false);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -25,26 +27,44 @@ export default function HouseList() {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
+
       const data = await response.json();
       if (data.length > 0) {
         setHouseInfo(data[0]);
+        setError(false);
       } else {
         setHouseInfo(null);
+        setError(true);
       }
       setHouseName('');
     } catch (error) {
       console.error('Error fetching house data:', error);
+      setError(true);
     }
   };
   
-  const getGradientColors = (colorsString: string): string => {
-    
+ const getGradientColors = (colorsString: string): string => {
     const colors = colorsString.split(' and ');
+    let firstColor = colors[0].charAt(0).toLowerCase() + colors[0].slice(1);
+    let secondColor = colors.length > 1 ? colors[1] : 'black'; // Фолбэк для второго цвета
+
     
-    const firstColor = colors[0].charAt(0).toLowerCase() + colors[0].slice(1);
-    
-    return `linear-gradient(to right, ${firstColor}, ${colors[1]})`;
-  };
+    const isValidColor = (color: string): boolean => {
+        const style = new Option().style;
+        style.color = color;
+        return style.color !== '';
+    };
+
+    if (!isValidColor(firstColor)) {
+        firstColor = 'white'; 
+    }
+
+    if (!isValidColor(secondColor)) {
+        secondColor = 'black'; 
+    }
+
+    return `linear-gradient(to right, ${firstColor}, ${secondColor})`;
+};
 
   return (
     <main className={styles.mainDiv}>
@@ -61,6 +81,7 @@ export default function HouseList() {
           <button className={styles.btn} type="submit">Search</button>
         </div>
       </form>
+      {error && <p className={styles.errorMessage}>Invalid house name. Please try again.</p>}
       {houseInfo && (
         <div className={styles.card}>
           <div className={styles.nameAnimal}>
